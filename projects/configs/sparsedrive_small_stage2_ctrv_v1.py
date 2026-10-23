@@ -13,6 +13,10 @@ model = dict(evo_cfg=dict(
     ekf_process_noise=[.1, .1, 1., .1, .1],
     ekf_measurement_noise=[.5, .5],
     ekf_initial_covariance=[1., 1., 25., 10., 10.],
+    # [speed, heading, yaw-rate] variance floors (SI squared units).
+    ekf_bootstrap_variance_floor=[4., .25, 1.],
+    # Unobserved heading/rate stay conservative, especially for low speed.
+    ekf_bootstrap_unobserved_variance=[25., 10., 10.],
     ekf_max_track_age=1.5,  # seconds since last measurement
     ekf_max_prediction_dt=1.5,
     ekf_motion_step_seconds=0.5,  # first motion point of the nuScenes model

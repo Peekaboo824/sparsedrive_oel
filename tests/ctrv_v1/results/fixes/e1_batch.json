@@ -1,0 +1,246 @@
+{
+  "mode": "enabled",
+  "fp16": false,
+  "matched_agent_count": 2,
+  "forward_seconds": 14.922198209911585,
+  "peak_memory_mib": 4602.6943359375,
+  "losses": {
+    "map_loss_cls_0": 0.5922565460205078,
+    "map_loss_line_0": 1.0613514184951782,
+    "map_loss_cls_1": 0.7100093364715576,
+    "map_loss_line_1": 0.6892334222793579,
+    "map_loss_cls_2": 0.8224360942840576,
+    "map_loss_line_2": 0.5122973918914795,
+    "map_loss_cls_3": 0.7583341002464294,
+    "map_loss_line_3": 0.796181857585907,
+    "map_loss_cls_4": 0.6595814824104309,
+    "map_loss_line_4": 0.7511477470397949,
+    "map_loss_cls_5": 0.6916954517364502,
+    "map_loss_line_5": 0.7520219683647156,
+    "planning_loss_cls_0": 0.021352313458919525,
+    "planning_loss_reg_0": 0.13807913661003113,
+    "planning_loss_status_0": 0.12580519914627075,
+    "loss_evo": 0.20105290412902832,
+    "loss_dyn": 0.04699859768152237
+  },
+  "raw_evo": 0.20105290412902832,
+  "dynamics": {
+    "batch_size": 1,
+    "entropy_triggered_samples": 1,
+    "active_samples": 1,
+    "topk_vehicle_count": 10,
+    "reliable_ekf_count": 4,
+    "matched_dyn_count": 2,
+    "prior_variance_sum": 2.46564927493422,
+    "track_observation_sum": 7.0,
+    "track_age_sum": 0.0,
+    "association_rejection_count": 8,
+    "valid_agents": 2,
+    "history_frames": 5,
+    "matched_observations": 20,
+    "observations": 29,
+    "teacher_copy_seconds": 0.09382224455475807,
+    "history_perception_seconds": 0.9603229984641075,
+    "ekf_seconds": 0.014209546148777008,
+    "raw_loss_dyn": 0.4699859619140625,
+    "weighted_loss_dyn": 0.046998596191406256,
+    "total_seconds": 1.0889118127524853
+  },
+  "gradients": {
+    "evo": {
+      "backbone": 25.891995688243533,
+      "neck": 4.349174645393079,
+      "detection": 20.014205925238983,
+      "motion": 1.142098025179296,
+      "prediction": 1.1272306963965963,
+      "motion_regression_parameters": {
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.weight": 0.22980089485645294,
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.bias": 0.010997590608894825,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.weight": 0.709554135799408,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.bias": 0.12151393294334412,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.weight": 0.6676633954048157,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.bias": 0.49999943375587463
+      }
+    },
+    "dyn": {
+      "backbone": 26.427184158747966,
+      "neck": 3.4062910955718473,
+      "detection": 17.581428802795752,
+      "motion": 1.1452862616269648,
+      "prediction": 1.1301036719882394,
+      "motion_regression_parameters": {
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.weight": 0.21816875040531158,
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.bias": 0.010110976174473763,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.weight": 0.717540442943573,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.bias": 0.12254074960947037,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.weight": 0.667483925819397,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.bias": 0.49981260299682617
+      }
+    }
+  },
+  "gradient_conflict": {
+    "scope": "local batch, unwrapped model, unused parameters treated as zero",
+    "evo_weight": 1.0,
+    "dyn_weight": 0.1,
+    "groups": {
+      "backbone": {
+        "raw": {
+          "cosine": 0.1610271293789243,
+          "evo_norm": 25.89491373589039,
+          "dyn_norm": 26.42217698703192,
+          "status": "ok"
+        },
+        "weighted": {
+          "cosine": 0.16102712937892222,
+          "evo_norm": 25.89491373589039,
+          "dyn_norm": 2.6422176987031927,
+          "status": "ok"
+        },
+        "parameter_tensors": 159,
+        "evo_used": 159,
+        "dyn_used": 159,
+        "jointly_used": 159
+      },
+      "neck": {
+        "raw": {
+          "cosine": 0.05541596475474611,
+          "evo_norm": 4.349917798470929,
+          "dyn_norm": 3.404552898122332,
+          "status": "ok"
+        },
+        "weighted": {
+          "cosine": 0.05541596475471242,
+          "evo_norm": 4.349917798470929,
+          "dyn_norm": 0.3404552898122332,
+          "status": "ok"
+        },
+        "parameter_tensors": 16,
+        "evo_used": 16,
+        "dyn_used": 16,
+        "jointly_used": 16
+      },
+      "detection": {
+        "raw": {
+          "cosine": 0.03912406820236586,
+          "evo_norm": 20.023554055263304,
+          "dyn_norm": 17.583117541598224,
+          "status": "ok"
+        },
+        "weighted": {
+          "cosine": 0.03912406820236485,
+          "evo_norm": 20.023554055263304,
+          "dyn_norm": 1.7583117541598225,
+          "status": "ok"
+        },
+        "parameter_tensors": 471,
+        "evo_used": 351,
+        "dyn_used": 351,
+        "jointly_used": 351
+      },
+      "motion": {
+        "raw": {
+          "cosine": -0.875978282125128,
+          "evo_norm": 1.1420980592747452,
+          "dyn_norm": 1.145286254285504,
+          "status": "ok"
+        },
+        "weighted": {
+          "cosine": -0.8759782821191009,
+          "evo_norm": 1.1420980592747452,
+          "dyn_norm": 0.1145286254285504,
+          "status": "ok"
+        },
+        "parameter_tensors": 136,
+        "evo_used": 98,
+        "dyn_used": 98,
+        "jointly_used": 98
+      }
+    }
+  },
+  "online_steps": [
+    {
+      "index": 10,
+      "seconds": 0.4509409926831722,
+      "loss": 9.329834938049316,
+      "grad_norm": 123.61808013916016,
+      "dynamics": {
+        "batch_size": 1,
+        "entropy_triggered_samples": 1,
+        "active_samples": 1,
+        "topk_vehicle_count": 10,
+        "reliable_ekf_count": 4,
+        "matched_dyn_count": 2,
+        "prior_variance_sum": 2.46564927493422,
+        "track_observation_sum": 7.0,
+        "track_age_sum": 0.0,
+        "association_rejection_count": 8,
+        "valid_agents": 2,
+        "history_frames": 5,
+        "matched_observations": 20,
+        "observations": 29,
+        "teacher_copy_seconds": 0.09382224455475807,
+        "history_perception_seconds": 0.9603229984641075,
+        "ekf_seconds": 0.014209546148777008,
+        "raw_loss_dyn": 0.4699859619140625,
+        "weighted_loss_dyn": 0.046998596191406256,
+        "total_seconds": 1.0889118127524853
+      }
+    },
+    {
+      "index": 11,
+      "seconds": 3.578050334006548,
+      "loss": 7.448925495147705,
+      "grad_norm": 84.6610336303711,
+      "dynamics": {
+        "batch_size": 1,
+        "entropy_triggered_samples": 1,
+        "active_samples": 0,
+        "topk_vehicle_count": 10,
+        "reliable_ekf_count": 4,
+        "matched_dyn_count": 0,
+        "prior_variance_sum": 0.0,
+        "track_observation_sum": 0.0,
+        "track_age_sum": 0.0,
+        "association_rejection_count": 10,
+        "valid_agents": 0,
+        "history_frames": 5,
+        "matched_observations": 18,
+        "observations": 24,
+        "teacher_copy_seconds": 0.06777198612689972,
+        "history_perception_seconds": 1.2351742275059223,
+        "ekf_seconds": 0.013820555061101913,
+        "raw_loss_dyn": 0.0,
+        "weighted_loss_dyn": 0.0,
+        "total_seconds": 1.3301917389035225
+      }
+    },
+    {
+      "index": 12,
+      "seconds": 3.59606895968318,
+      "loss": 8.213136672973633,
+      "grad_norm": 171.04791259765625,
+      "dynamics": {
+        "batch_size": 1,
+        "entropy_triggered_samples": 1,
+        "active_samples": 0,
+        "topk_vehicle_count": 10,
+        "reliable_ekf_count": 3,
+        "matched_dyn_count": 0,
+        "prior_variance_sum": 0.0,
+        "track_observation_sum": 0.0,
+        "track_age_sum": 0.0,
+        "association_rejection_count": 10,
+        "valid_agents": 0,
+        "history_frames": 5,
+        "matched_observations": 13,
+        "observations": 19,
+        "teacher_copy_seconds": 0.06340235844254494,
+        "history_perception_seconds": 1.1978110074996948,
+        "ekf_seconds": 0.01140187680721283,
+        "raw_loss_dyn": 0.0,
+        "weighted_loss_dyn": 0.0,
+        "total_seconds": 1.2781587466597557
+      }
+    }
+  ]
+}

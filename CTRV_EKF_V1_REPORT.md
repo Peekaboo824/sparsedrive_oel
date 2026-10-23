@@ -1,3 +1,5 @@
+> **当前修复版本**：熵门控、启动协方差、实验公平性、DDP 日志和梯度冲突诊断的最新结果见 [CTRV_EKF_V1_FIX_REPORT.md](CTRV_EKF_V1_FIX_REPORT.md)。下文保留初次 V1 实现的审计与历史验证记录。
+
 **CTRV-EKF V1 实施与验证记录（2026-10-23）**
 
 本次只增加独立 `loss_dyn`。原 `get_evo_loss()`、Detection/Map/Motion/Planning Head 和旧配置文件均未修改。关闭分支或令 `lambda_dyn=0`，模型不执行历史推理、滤波、随机数操作，也不添加损失键。关闭时如仍使用 E1 的 Dataset 配置，历史图像的加载开销仍存在；完整 E0 配置同时关闭历史加载。

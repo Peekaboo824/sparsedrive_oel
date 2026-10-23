@@ -1,0 +1,500 @@
+diff --git a/projects/configs/sparsedrive_small_stage2_ctrv_e0.py b/projects/configs/sparsedrive_small_stage2_ctrv_e0.py
+index 92f35c4..a400251 100644
+--- a/projects/configs/sparsedrive_small_stage2_ctrv_e0.py
++++ b/projects/configs/sparsedrive_small_stage2_ctrv_e0.py
+@@ -7,3 +7,17 @@ and per-GPU batch settings for both E0/E1.
+ """
+ _base_ = ['./sparsedrive_small_stage2.py']
+ model = dict(evo_cfg=dict(loss_weight=1.0, enable_dynamics_loss=False))
++
++# Remove only the audited early-stop hook; retain unrelated parent hooks.
++from mmcv import Config as _Config
++custom_hooks = [hook for hook in _Config.fromfile(
++    '{{fileDirname}}/sparsedrive_small_stage2.py').get('custom_hooks', [])
++    if hook['type'] != 'WindowLossStopHook']
++del _Config
++custom_hooks.append(dict(type='DynamicsDiagnosticsHook', priority='NORMAL'))
++custom_imports = dict(
++    imports=['projects.mmdet3d_plugin.models.dynamics.diagnostics'],
++    allow_failed_imports=False)
++# Both comparison runs must pass --seed 3407 --deterministic to tools/train.py;
++# that existing entrypoint overwrites cfg.seed with its CLI seed (default 0).
++seed = 3407
+diff --git a/projects/configs/sparsedrive_small_stage2_ctrv_v1.py b/projects/configs/sparsedrive_small_stage2_ctrv_v1.py
+index 642824e..099535a 100644
+--- a/projects/configs/sparsedrive_small_stage2_ctrv_v1.py
++++ b/projects/configs/sparsedrive_small_stage2_ctrv_v1.py
+@@ -13,6 +13,10 @@ model = dict(evo_cfg=dict(
+     ekf_process_noise=[.1, .1, 1., .1, .1],
+     ekf_measurement_noise=[.5, .5],
+     ekf_initial_covariance=[1., 1., 25., 10., 10.],
++    # [speed, heading, yaw-rate] variance floors (SI squared units).
++    ekf_bootstrap_variance_floor=[4., .25, 1.],
++    # Unobserved heading/rate stay conservative, especially for low speed.
++    ekf_bootstrap_unobserved_variance=[25., 10., 10.],
+     ekf_max_track_age=1.5,  # seconds since last measurement
+     ekf_max_prediction_dt=1.5,
+     ekf_motion_step_seconds=0.5,  # first motion point of the nuScenes model
+diff --git a/projects/mmdet3d_plugin/models/dynamics/agent_track_bank.py b/projects/mmdet3d_plugin/models/dynamics/agent_track_bank.py
+index 5305038..4c70088 100644
+--- a/projects/mmdet3d_plugin/models/dynamics/agent_track_bank.py
++++ b/projects/mmdet3d_plugin/models/dynamics/agent_track_bank.py
+@@ -56,23 +56,8 @@ class AgentTrackBank:
+             t['ekf'].update(positions[i])
+             t['observations'].append((timestamp, positions[i].copy()))
+             t['last_seen'] = timestamp
+-            # Bootstrap from measured displacement, never from box yaw/GT velocity.
+-            history = t['observations']
+-            if len(history) <= 3:
+-                dt = history[-1][0] - history[-2][0]
+-                delta = history[-1][1] - history[-2][1]
+-                speed = np.linalg.norm(delta)/dt
+-                if speed >= self.cfg.get('ekf_min_heading_speed', .5):
+-                    heading = np.arctan2(delta[1], delta[0])
+-                    omega = 0.
+-                    if len(history) == 3:
+-                        delta0 = history[-2][1] - history[-3][1]
+-                        dt0 = history[-2][0] - history[-3][0]
+-                        if np.linalg.norm(delta0)/dt0 >= self.cfg.get('ekf_min_heading_speed', .5):
+-                            omega = wrap_angle(heading - np.arctan2(delta0[1], delta0[0])) / ((dt+dt0)/2)
+-                    t['ekf'].x[2:] = [speed, wrap_angle(heading + omega*dt/2), omega]
+-                else:
+-                    t['ekf'].x[2:] = [0., 0., 0.]
++            if len(t['observations']) <= 3:
++                self._bootstrap_motion(t)
+             matched.add(i)
+         self.matched_count += len(pairs)
+         self.observation_count += len(positions)
+@@ -83,6 +68,56 @@ class AgentTrackBank:
+                                         observations=[(timestamp, pos.copy())]))
+         self.time = timestamp
+ 
++    def _bootstrap_motion(self, track):
++        """Reset mean AND uncertainty for finite-difference startup estimates.
++
++        Retain the filtered position block; discard stale position/motion and
++        motion/motion correlations when replacing the motion estimate. Diagonal
++        bounds use fixed measurement R, finite-difference noise propagation,
++        and configurable variance floors. No adaptive Q/R or learned noise.
++        """
++        ekf, history = track['ekf'], track['observations']
++        floors = np.asarray(self.cfg.get('ekf_bootstrap_variance_floor', (4., .25, 1.)), dtype=np.float64)
++        unknown = np.asarray(self.cfg.get('ekf_bootstrap_unobserved_variance',
++                                        np.diag(ekf.initial_covariance)[2:]), dtype=np.float64)
++        if (floors.shape != (3,) or unknown.shape != (3,)
++                or not np.isfinite(floors).all() or not np.isfinite(unknown).all()
++                or (floors <= 0).any() or (unknown <= 0).any()):
++            raise ValueError('Bootstrap variances must be three finite positive values')
++        dt = history[-1][0] - history[-2][0]
++        delta = history[-1][1] - history[-2][1]
++        distance = np.linalg.norm(delta)
++        speed = distance/dt
++        noise = np.linalg.eigvalsh(ekf.R).max()
++        variance = np.maximum(floors, unknown)
++        variance[0] = max(floors[0], 2*noise/dt**2)
++        motion = np.zeros(3, dtype=np.float64)
++        if speed >= self.cfg.get('ekf_min_heading_speed', .5):
++            heading = np.arctan2(delta[1], delta[0])
++            heading_variance = 2*noise/max(distance**2, 1e-12)
++            omega, omega_variance = 0., max(floors[2], unknown[2])
++            if len(history) == 3:
++                delta0 = history[-2][1] - history[-3][1]
++                dt0 = history[-2][0] - history[-3][0]
++                distance0 = np.linalg.norm(delta0)
++                if distance0/dt0 >= self.cfg.get('ekf_min_heading_speed', .5):
++                    midpoint_dt = (dt+dt0)/2
++                    omega = wrap_angle(heading-np.arctan2(delta0[1], delta0[0]))/midpoint_dt
++                    previous_heading_variance = 2*noise/max(distance0**2, 1e-12)
++                    # Conservative bound includes shared-middle-observation correlation.
++                    omega_variance = max(floors[2],
++                        (np.sqrt(heading_variance)+np.sqrt(previous_heading_variance))**2/midpoint_dt**2)
++            variance[2] = omega_variance
++            variance[1] = max(floors[1],
++                (np.sqrt(heading_variance)+dt/2*np.sqrt(omega_variance))**2)
++            motion[:] = [speed, wrap_angle(heading+omega*dt/2), omega]
++        # At low speed heading/yaw rate remain unobserved, never confident zeros.
++        ekf.x[2:] = motion
++        p = np.zeros((5, 5), dtype=np.float64)
++        p[:2, :2] = ekf.P[:2, :2]
++        p[2:, 2:] = np.diag(variance)
++        ekf.P = ekf._stable(p)
++
+     def reliable_tracks(self):
+         minimum = max(3, self.cfg.get('ekf_min_observations', 3))
+         max_var = self.cfg.get('ekf_max_position_variance', 25.)
+@@ -90,7 +125,7 @@ class AgentTrackBank:
+                 and t['last_seen'] == self.time
+                 and np.linalg.eigvalsh(t['ekf'].P[:2, :2]).max() <= max_var]
+ 
+-    def predict_prior(self, track, next_timestamp):
++    def predict_prior(self, track, next_timestamp, return_covariance=False):
+         # Predict a copy: no measurement at t+1 and no persistent bank across samples.
+         ekf = copy.deepcopy(track['ekf'])
+         dt = float(next_timestamp) - self.time
+@@ -98,8 +133,9 @@ class AgentTrackBank:
+             return None
+         try:
+             position = ekf.predict(dt)
+-            if np.linalg.eigvalsh(ekf.get_prior_covariance()).max() > self.cfg.get('ekf_max_position_variance', 25.):
++            prior_covariance = ekf.get_prior_covariance()
++            if np.linalg.eigvalsh(prior_covariance).max() > self.cfg.get('ekf_max_position_variance', 25.):
+                 return None
+-            return position
++            return (position, prior_covariance) if return_covariance else position
+         except (FloatingPointError, np.linalg.LinAlgError):
+             return None
+diff --git a/projects/mmdet3d_plugin/models/dynamics/dynamics_consistency.py b/projects/mmdet3d_plugin/models/dynamics/dynamics_consistency.py
+index 1d5f531..d01ff89 100644
+--- a/projects/mmdet3d_plugin/models/dynamics/dynamics_consistency.py
++++ b/projects/mmdet3d_plugin/models/dynamics/dynamics_consistency.py
+@@ -35,6 +35,26 @@ def to_world(positions, transform):
+         return (homogeneous @ t.T)[..., :2]
+ 
+ 
++@torch.no_grad()
++def planning_entropy_trigger(outputs, data, b, cfg):
++    """Read-only copy of the original Evo gate, including missing-command bypass.
++
++    Keep dtype/autocast, reshape, argmax, softmax, epsilon and <= boundary exactly
++    as get_evo_loss; do not cast logits or substitute a different command source.
++    """
++    plan_cls_scores_b = outputs[3]['classification'][-1][b]
++    reshaped_scores = plan_cls_scores_b.reshape(3, 6)
++    if 'gt_ego_fut_cmd' in data:
++        gt_cmd_tensor = data['gt_ego_fut_cmd'][b]
++        cmd_idx = gt_cmd_tensor.argmax(dim=-1).item()
++        scores_for_entropy = reshaped_scores[cmd_idx, :]
++        plan_probs = torch.softmax(scores_for_entropy, dim=-1)
++        entropy = -(plan_probs * torch.log(plan_probs + 1e-9)).sum()
++        if entropy <= cfg.get('ENTROPY_THRESHOLD', .2):
++            return False
++    return True
++
++
+ def selected_predictions(outputs, b, cfg):
+     diagnostic = outputs[4]
+     attention = diagnostic['attn_weights_gnn'][b][-1, :-1]
+@@ -107,10 +127,13 @@ def dynamics_loss(model, outputs, data):
+     ref = outputs[2]['prediction'][-1]
+     zero = ref.float().sum() * 0. + outputs[0]['prediction'][-1].float().sum()*0.
+     contexts = data.get('dynamics_context')
+-    if contexts is None:
+-        raise ValueError('Dynamics enabled but dataset has no dynamics_context; configure dynamics_history_length/pipeline')
+     predictions, priors = [], []
+-    stats = dict(valid_agents=0, history_frames=0, matched_observations=0, observations=0,
++    stats = dict(batch_size=ref.shape[0], entropy_triggered_samples=0, active_samples=0,
++                 topk_vehicle_count=0, reliable_ekf_count=0, matched_dyn_count=0,
++                 prior_variance_sum=0., track_observation_sum=0., track_age_sum=0.,
++                 association_attempted_count=0, association_rejection_count=0,
++                 prior_rejection_count=0, unavailable_dyn_target_count=0,
++                 valid_agents=0, history_frames=0, matched_observations=0, observations=0,
+                  teacher_copy_seconds=0., history_perception_seconds=0., ekf_seconds=0.)
+     # Preserve original stochastic training stream, even if a backend draws RNG.
+     py_state, np_state = random.getstate(), np.random.get_state()
+@@ -119,7 +142,20 @@ def dynamics_loss(model, outputs, data):
+     try:
+         with torch.random.fork_rng(devices=devices):
+             teacher = None
+-            for b, context in enumerate(contexts):
++            for b in range(ref.shape[0]):
++                if not planning_entropy_trigger(outputs, data, b, cfg):
++                    continue  # no teacher copy, history inference or EKF for low entropy
++                stats['entropy_triggered_samples'] += 1
++                if contexts is None:
++                    raise ValueError('Dynamics enabled but dataset has no dynamics_context; configure dynamics_history_length/pipeline')
++                context = contexts[b]
++                indices, _, nn_xy = selected_predictions(outputs, b, cfg)
++                labels = outputs[0]['classification'][-1][b].detach().argmax(-1)[indices]
++                vehicles = labels.new_tensor(cfg.get('dynamics_vehicle_class_ids', [0, 1, 2, 3, 4]))
++                vehicle_count = int((labels[:, None] == vehicles).any(-1).sum().item())
++                stats['topk_vehicle_count'] += vehicle_count
++                # Also count missing-history/prior failures separately from association.
++                stats['unavailable_dyn_target_count'] += vehicle_count
+                 frames = context['history']
+                 if not context['has_valid_next_frame'] or len(frames) < max(3, cfg.get('ekf_min_observations', 3)):
+                     continue
+@@ -142,37 +178,51 @@ def dynamics_loss(model, outputs, data):
+                 stats['history_perception_seconds'] += time.perf_counter() - before
+                 before = time.perf_counter()
+                 bank = AgentTrackBank(cfg)
+-                for timestamp, xy, labels in sequence:
+-                    bank.step(timestamp, xy, labels)
++                for timestamp, xy, history_labels in sequence:
++                    bank.step(timestamp, xy, history_labels)
+                     stats['history_frames'] += 1
+                 stats['matched_observations'] += bank.matched_count
+                 stats['observations'] += bank.observation_count
+                 tracks = bank.reliable_tracks()
++                stats['reliable_ekf_count'] += len(tracks)
+                 if not tracks:
+                     stats['ekf_seconds'] += time.perf_counter() - before
+                     continue
+-                indices, _, nn_xy = selected_predictions(outputs, b, cfg)
+                 boxes = outputs[0]['prediction'][-1][b]
+-                labels = outputs[0]['classification'][-1][b].detach().argmax(-1)[indices]
+                 world = to_world(boxes[indices, :2].detach(), data['img_metas'][b]['T_global'])
+                 pairs = associate(world.cpu().double().numpy(), labels.cpu().numpy(), tracks,
+                                   cfg.get('ekf_association_gate', 9.21),
+                                   cfg.get('ekf_max_association_distance', 6.))
++                stats['association_attempted_count'] += vehicle_count
++                stats['association_rejection_count'] += vehicle_count-len(pairs)
+                 world_prediction = to_world(nn_xy, data['img_metas'][b]['T_global'])
++                sample_matches = 0
+                 for i, j in pairs:
+-                    prior = bank.predict_prior(tracks[j], context['next_timestamp'])
++                    prior = bank.predict_prior(tracks[j], context['next_timestamp'], return_covariance=True)
+                     if prior is not None:
++                        position, prior_covariance = prior
+                         predictions.append(world_prediction[i])
+-                        priors.append(prior)
++                        priors.append(position)
++                        sample_matches += 1
++                        stats['prior_variance_sum'] += float(np.trace(prior_covariance)/2)
++                        stats['track_observation_sum'] += len(tracks[j]['observations'])
++                        stats['track_age_sum'] += bank.time-tracks[j]['last_seen']
++                stats['active_samples'] += int(sample_matches > 0)
++                stats['prior_rejection_count'] += len(pairs)-sample_matches
++                stats['unavailable_dyn_target_count'] -= sample_matches
+                 stats['ekf_seconds'] += time.perf_counter() - before
+     finally:
+         random.setstate(py_state)
+         np.random.set_state(np_state)
+-    stats['valid_agents'] = len(predictions)
++    stats['valid_agents'] = stats['matched_dyn_count'] = len(predictions)
++    if predictions:
++        predicted = torch.stack(predictions)
++        target = torch.as_tensor(np.stack(priors), device=device, dtype=torch.float32)
++        loss = compute_dynamics_loss(predicted, target, torch.ones(len(priors), device=device, dtype=torch.bool))
++    else:
++        loss = zero
++    stats['raw_loss_dyn'] = float(loss.detach())
++    stats['weighted_loss_dyn'] = stats['raw_loss_dyn'] * cfg.get('lambda_dyn', .1)
+     stats['total_seconds'] = time.perf_counter() - started
+-    model.dynamics_diagnostics = stats  # logging only; no tracks survive this call
+-    if not predictions:
+-        return zero
+-    predicted = torch.stack(predictions)
+-    target = torch.as_tensor(np.stack(priors), device=device, dtype=torch.float32)
+-    return compute_dynamics_loss(predicted, target, torch.ones(len(priors), device=device, dtype=torch.bool))
++    model.dynamics_diagnostics = stats  # detached logging only; no tracks survive
++    return loss
+diff --git a/tools/ctrv_v1/ddp_smoke.py b/tools/ctrv_v1/ddp_smoke.py
+index 5ecc8b5..46dce38 100644
+--- a/tools/ctrv_v1/ddp_smoke.py
++++ b/tools/ctrv_v1/ddp_smoke.py
+@@ -9,7 +9,8 @@ from capture_baseline import seed, make_batch, norms
+ import torch
+ import torch.distributed as dist
+ import mmcv
+-from mmcv.runner import load_checkpoint, wrap_fp16_model
++from mmcv.runner import load_checkpoint, wrap_fp16_model, HOOKS
++from mmcv.utils import build_from_cfg, import_modules_from_strings
+ from mmdet.models import build_detector
+ from mmcv.parallel import MMDistributedDataParallel
+ 
+@@ -24,6 +25,8 @@ def main():
+     torch.cuda.set_device(rank)
+     dist.init_process_group('nccl')
+     cfg = mmcv.Config.fromfile(args.config)
++    if cfg.get('custom_imports'):
++        import_modules_from_strings(**cfg.custom_imports)
+     seed()
+     model = build_detector(cfg.model).cuda().train()
+     load_checkpoint(model, cfg.load_from, map_location='cpu', strict=False)
+@@ -46,8 +49,16 @@ def main():
+         from mmcv.runner import OptimizerHook
+         hook = OptimizerHook(grad_clip=dict(max_norm=25, norm_type=2))
+     runner.register_hook(hook)
++    diagnostics_hook = None
++    for hook_cfg in cfg.get('custom_hooks', []):
++        settings = dict(hook_cfg)
++        priority = settings.pop('priority', 'NORMAL')
++        custom = build_from_cfg(settings, HOOKS)
++        runner.register_hook(custom, priority=priority)
++        if settings['type'] == 'DynamicsDiagnosticsHook':
++            diagnostics_hook = custom
+     runner.run([[batch]], [('train', 1)])
+-    summary = dict(rank=rank, fp16=args.fp16, log_vars=runner.outputs['log_vars'],
++    summary = dict(rank=rank, fp16=args.fp16, reduced_dynamics=getattr(diagnostics_hook, 'latest_metrics', None), log_vars=runner.outputs['log_vars'],
+                    dynamics=model.module.dynamics_diagnostics, gradients=norms(model.module))
+     (output / ('rank%d.json' % rank)).write_text(json.dumps(summary, indent=2))
+     print(json.dumps(summary), flush=True)
+diff --git a/tools/ctrv_v1/validate_real_batch.py b/tools/ctrv_v1/validate_real_batch.py
+index 392d8d7..0f839e8 100644
+--- a/tools/ctrv_v1/validate_real_batch.py
++++ b/tools/ctrv_v1/validate_real_batch.py
+@@ -33,6 +33,7 @@ def main():
+     p.add_argument('--output-dir', required=True)
+     p.add_argument('--index', type=int, default=10)
+     p.add_argument('--fp16', action='store_true')
++    p.add_argument('--gradient-conflict', action='store_true', help='Optional local raw/weighted gradient cosine analysis; no optimizer step')
+     p.add_argument('--steps', type=int, default=0, help='Additional real optimizer steps on sequential samples')
+     args = p.parse_args()
+     output = Path(args.output_dir)
+@@ -80,6 +81,11 @@ def main():
+                    losses={k: float(v.detach()) for k, v in losses.items()},
+                    raw_evo=float(recorded['evo'].detach()),
+                    dynamics=getattr(model, 'dynamics_diagnostics', None), gradients={})
++    if args.gradient_conflict:
++        from projects.mmdet3d_plugin.models.dynamics.gradient_diagnostics import gradient_conflict
++        raw_dyn = losses['loss_dyn']/cfg.model.evo_cfg.lambda_dyn if 'loss_dyn' in losses else None
++        summary['gradient_conflict'] = gradient_conflict(model, recorded['evo'], raw_dyn,
++            cfg.model.evo_cfg.get('loss_weight', 1.), cfg.model.evo_cfg.get('lambda_dyn', .1))
+     gradients = {}
+     for name, loss in [('evo', recorded['evo'])] + ([('dyn', losses['loss_dyn']/cfg.model.evo_cfg.lambda_dyn)] if 'loss_dyn' in losses else []):
+         model.zero_grad(set_to_none=True)
+diff --git a/projects/mmdet3d_plugin/models/dynamics/diagnostics.py b/projects/mmdet3d_plugin/models/dynamics/diagnostics.py
+new file mode 100644
+index 0000000..b7d4c53
+--- /dev/null
++++ b/projects/mmdet3d_plugin/models/dynamics/diagnostics.py
+@@ -0,0 +1,89 @@
++"""Detached per-step diagnostics. Never add metrics to the training loss dict."""
++import torch
++import torch.distributed as dist
++from mmcv.runner import HOOKS, Hook
++
++
++_FIELDS = ('batch_size', 'entropy_triggered_samples', 'active_samples',
++           'topk_vehicle_count', 'reliable_ekf_count', 'matched_dyn_count',
++           'association_attempted_count', 'association_rejection_count',
++           'prior_rejection_count', 'unavailable_dyn_target_count', 'prior_variance_sum',
++           'track_observation_sum', 'track_age_sum')
++
++
++def diagnostics_totals(stats):
++    """Additive sufficient statistics; losses are local valid-agent means."""
++    matched = stats.get('matched_dyn_count', 0)
++    batch = stats.get('batch_size', 0)
++    raw, weighted = stats.get('raw_loss_dyn', 0.), stats.get('weighted_loss_dyn', 0.)
++    return [float(stats.get(k, 0)) for k in _FIELDS] + [
++        raw*matched, weighted*matched, raw*batch, weighted*batch, raw, weighted, 1.]
++
++
++def metrics_from_totals(values):
++    """Ratios of global sums, not averages of per-rank ratios.
++
++    Counts are global counts per step. Agent metrics use matched-agent counts;
++    sample ratios include all images, including low entropy/invalid history.
++    Rank-mean loss is the actual DDP mean of local-agent-mean objectives.
++    """
++    s = dict(zip(_FIELDS, values[:len(_FIELDS)]))
++    raw_agent, weighted_agent, raw_batch, weighted_batch, raw_rank, weighted_rank, ranks = values[len(_FIELDS):]
++    batch, agents = s['batch_size'], s['matched_dyn_count']
++    divide = lambda numerator, denominator: numerator/denominator if denominator else 0.
++    result = dict(
++        entropy_trigger_rate=divide(s['entropy_triggered_samples'], batch),
++        topk_vehicle_count=s['topk_vehicle_count'],
++        reliable_ekf_count=s['reliable_ekf_count'],
++        matched_dyn_count=agents,
++        dyn_active_sample_ratio=divide(s['active_samples'], batch),
++        raw_loss_dyn=divide(raw_agent, agents),
++        weighted_loss_dyn=divide(weighted_agent, agents),
++        raw_loss_dyn_batch_mean=divide(raw_batch, batch),
++        weighted_loss_dyn_batch_mean=divide(weighted_batch, batch),
++        raw_loss_dyn_rank_mean=divide(raw_rank, ranks),
++        weighted_loss_dyn_rank_mean=divide(weighted_rank, ranks),
++        ekf_prior_position_variance=divide(s['prior_variance_sum'], agents),
++        track_observation_count=divide(s['track_observation_sum'], agents),
++        track_age=divide(s['track_age_sum'], agents),
++        association_attempted_count=s['association_attempted_count'],
++        association_rejection_count=s['association_rejection_count'],
++        prior_rejection_count=s['prior_rejection_count'],
++        unavailable_dyn_target_count=s['unavailable_dyn_target_count'],
++        dyn_batch_sample_count=batch,
++    )
++    for k in ('topk_vehicle_count', 'reliable_ekf_count', 'matched_dyn_count'):
++        result[k+'_per_sample'] = divide(result[k], batch)
++    return result
++
++
++def reduce_dynamics_diagnostics(stats, device):
++    # A fresh detached vector: all_reduce cannot touch model tensors or gradients.
++    vector = torch.tensor(diagnostics_totals(stats), device=device, dtype=torch.float64)
++    if dist.is_available() and dist.is_initialized():
++        dist.all_reduce(vector, op=dist.ReduceOp.SUM)
++    return metrics_from_totals(vector.cpu().tolist())
++
++
++@HOOKS.register_module()
++class DynamicsDiagnosticsHook(Hook):
++    """Runs after optimizer, before MMCV loggers; no extra backward/optimizer step.
++
++    All ranks must use the same branch enable/weight settings as normal DDP.
++    Logger windows average per-step metrics; agent averages here are per step.
++    """
++    def after_train_iter(self, runner):
++        model = runner.model.module if hasattr(runner.model, 'module') else runner.model
++        cfg = getattr(model, 'evo_cfg', {})
++        if not cfg.get('enable_dynamics_loss', False) or cfg.get('lambda_dyn', .1) == 0.:
++            return
++        stats = getattr(model, 'dynamics_diagnostics', None)
++        if stats is None:
++            return
++        parameter = next(model.parameters())
++        device = parameter.device
++        if dist.is_initialized() and dist.get_backend() == 'gloo':
++            device = torch.device('cpu')
++        metrics = reduce_dynamics_diagnostics(stats, device)
++        runner.log_buffer.update(metrics, 1)
++        self.latest_metrics = metrics
+diff --git a/projects/mmdet3d_plugin/models/dynamics/gradient_diagnostics.py b/projects/mmdet3d_plugin/models/dynamics/gradient_diagnostics.py
+new file mode 100644
+index 0000000..3c5efd3
+--- /dev/null
++++ b/projects/mmdet3d_plugin/models/dynamics/gradient_diagnostics.py
+@@ -0,0 +1,54 @@
++"""Opt-in local-batch gradient conflict analysis. No DDP wrapper or step hooks."""
++import torch
++
++
++GROUPS = dict(backbone='img_backbone.', neck='img_neck.',
++              detection='head.det_head.', motion='head.motion_plan_head.')
++
++
++def _summary(dot, norm_e_squared, norm_d_squared, epsilon):
++    norm_e, norm_d = norm_e_squared**.5, norm_d_squared**.5
++    valid = norm_e > 0. and norm_d > 0.
++    return dict(cosine=dot/(norm_e*norm_d+epsilon) if valid else None,
++                evo_norm=norm_e, dyn_norm=norm_d,
++                status='ok' if valid else 'zero_or_unused_gradient')
++
++
++def gradient_conflict(model, raw_evo, raw_dyn, evo_weight=1., dyn_weight=.1, epsilon=1e-12):
++    """Same trainable parameter vector for each loss; unused entries are zeros.
++
++    autograd.grad never populates .grad, never runs a step, and retains the graph
++    for ordinary backward. This is a standalone analysis of unwrapped local model
++    outputs, not a training-time DDP collective or the globally averaged gradient.
++    """
++    named = [(n, p) for n, p in model.named_parameters() if p.requires_grad
++             and any(n.startswith(prefix) for prefix in GROUPS.values())]
++    parameters = [p for _, p in named]
++    def gradients(loss):
++        if not parameters or loss is None or not loss.requires_grad:
++            return [None]*len(parameters)
++        return torch.autograd.grad(loss, parameters, allow_unused=True, retain_graph=True)
++    grads_e, grads_d = gradients(raw_evo), gradients(raw_dyn)
++    result = {}
++    for group, prefix in GROUPS.items():
++        dot = norm_e = norm_d = 0.
++        count = used_e = used_d = joint = 0
++        for (name, _), ge, gd in zip(named, grads_e, grads_d):
++            if not name.startswith(prefix):
++                continue
++            count += 1
++            used_e += ge is not None
++            used_d += gd is not None
++            joint += ge is not None and gd is not None
++            if ge is not None:
++                norm_e += float(ge.detach().double().square().sum())
++            if gd is not None:
++                norm_d += float(gd.detach().double().square().sum())
++            if ge is not None and gd is not None:
++                dot += float((ge.detach().double()*gd.detach().double()).sum())
++        result[group] = dict(raw=_summary(dot, norm_e, norm_d, epsilon),
++            weighted=_summary(dot*evo_weight*dyn_weight, norm_e*evo_weight**2,
++                              norm_d*dyn_weight**2, epsilon),
++            parameter_tensors=count, evo_used=used_e, dyn_used=used_d, jointly_used=joint)
++    return dict(scope='local batch, unwrapped model, unused parameters treated as zero',
++                evo_weight=float(evo_weight), dyn_weight=float(dyn_weight), groups=result)

@@ -1,0 +1,29 @@
+/vepfs-mlp2/c20250505/240906016/jjy/Anaconda/envs/sparsedrive/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+Use flash_attn_varlen_kvpacked_func
+{
+  "disabled_evo_weight_0.0": {
+    "bitwise_equal": true,
+    "raw_evo": 0.20101046562194824,
+    "matched_agents": 2,
+    "compared": "loss_dict, raw_evo, topk, modes, matched_positions, pseudo_targets, output_gradients, AdamW parameters/state"
+  },
+  "zero_evo_weight_0.0": {
+    "bitwise_equal": true,
+    "raw_evo": 0.20101046562194824,
+    "matched_agents": 2,
+    "compared": "loss_dict, raw_evo, topk, modes, matched_positions, pseudo_targets, output_gradients, AdamW parameters/state"
+  },
+  "disabled_evo_weight_1.0": {
+    "bitwise_equal": true,
+    "raw_evo": 0.20101046562194824,
+    "matched_agents": 2,
+    "compared": "loss_dict, raw_evo, topk, modes, matched_positions, pseudo_targets, output_gradients, AdamW parameters/state"
+  },
+  "zero_evo_weight_1.0": {
+    "bitwise_equal": true,
+    "raw_evo": 0.20101046562194824,
+    "matched_agents": 2,
+    "compared": "loss_dict, raw_evo, topk, modes, matched_positions, pseudo_targets, output_gradients, AdamW parameters/state"
+  }
+}

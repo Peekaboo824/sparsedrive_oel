@@ -35,6 +35,26 @@ def to_world(positions, transform):
         return (homogeneous @ t.T)[..., :2]
 
 
+@torch.no_grad()
+def planning_entropy_trigger(outputs, data, b, cfg):
+    """Read-only copy of the original Evo gate, including missing-command bypass.
+
+    Keep dtype/autocast, reshape, argmax, softmax, epsilon and <= boundary exactly
+    as get_evo_loss; do not cast logits or substitute a different command source.
+    """
+    plan_cls_scores_b = outputs[3]['classification'][-1][b]
+    reshaped_scores = plan_cls_scores_b.reshape(3, 6)
+    if 'gt_ego_fut_cmd' in data:
+        gt_cmd_tensor = data['gt_ego_fut_cmd'][b]
+        cmd_idx = gt_cmd_tensor.argmax(dim=-1).item()
+        scores_for_entropy = reshaped_scores[cmd_idx, :]
+        plan_probs = torch.softmax(scores_for_entropy, dim=-1)
+        entropy = -(plan_probs * torch.log(plan_probs + 1e-9)).sum()
+        if entropy <= cfg.get('ENTROPY_THRESHOLD', .2):
+            return False
+    return True
+
+
 def selected_predictions(outputs, b, cfg):
     diagnostic = outputs[4]
     attention = diagnostic['attn_weights_gnn'][b][-1, :-1]
@@ -107,10 +127,13 @@ def dynamics_loss(model, outputs, data):
     ref = outputs[2]['prediction'][-1]
     zero = ref.float().sum() * 0. + outputs[0]['prediction'][-1].float().sum()*0.
     contexts = data.get('dynamics_context')
-    if contexts is None:
-        raise ValueError('Dynamics enabled but dataset has no dynamics_context; configure dynamics_history_length/pipeline')
     predictions, priors = [], []
-    stats = dict(valid_agents=0, history_frames=0, matched_observations=0, observations=0,
+    stats = dict(batch_size=ref.shape[0], entropy_triggered_samples=0, active_samples=0,
+                 topk_vehicle_count=0, reliable_ekf_count=0, matched_dyn_count=0,
+                 prior_variance_sum=0., track_observation_sum=0., track_age_sum=0.,
+                 association_attempted_count=0, association_rejection_count=0,
+                 prior_rejection_count=0, unavailable_dyn_target_count=0,
+                 valid_agents=0, history_frames=0, matched_observations=0, observations=0,
                  teacher_copy_seconds=0., history_perception_seconds=0., ekf_seconds=0.)
     # Preserve original stochastic training stream, even if a backend draws RNG.
     py_state, np_state = random.getstate(), np.random.get_state()
@@ -119,7 +142,20 @@ def dynamics_loss(model, outputs, data):
     try:
         with torch.random.fork_rng(devices=devices):
             teacher = None
-            for b, context in enumerate(contexts):
+            for b in range(ref.shape[0]):
+                if not planning_entropy_trigger(outputs, data, b, cfg):
+                    continue  # no teacher copy, history inference or EKF for low entropy
+                stats['entropy_triggered_samples'] += 1
+                if contexts is None:
+                    raise ValueError('Dynamics enabled but dataset has no dynamics_context; configure dynamics_history_length/pipeline')
+                context = contexts[b]
+                indices, _, nn_xy = selected_predictions(outputs, b, cfg)
+                labels = outputs[0]['classification'][-1][b].detach().argmax(-1)[indices]
+                vehicles = labels.new_tensor(cfg.get('dynamics_vehicle_class_ids', [0, 1, 2, 3, 4]))
+                vehicle_count = int((labels[:, None] == vehicles).any(-1).sum().item())
+                stats['topk_vehicle_count'] += vehicle_count
+                # Also count missing-history/prior failures separately from association.
+                stats['unavailable_dyn_target_count'] += vehicle_count
                 frames = context['history']
                 if not context['has_valid_next_frame'] or len(frames) < max(3, cfg.get('ekf_min_observations', 3)):
                     continue
@@ -142,37 +178,51 @@ def dynamics_loss(model, outputs, data):
                 stats['history_perception_seconds'] += time.perf_counter() - before
                 before = time.perf_counter()
                 bank = AgentTrackBank(cfg)
-                for timestamp, xy, labels in sequence:
-                    bank.step(timestamp, xy, labels)
+                for timestamp, xy, history_labels in sequence:
+                    bank.step(timestamp, xy, history_labels)
                     stats['history_frames'] += 1
                 stats['matched_observations'] += bank.matched_count
                 stats['observations'] += bank.observation_count
                 tracks = bank.reliable_tracks()
+                stats['reliable_ekf_count'] += len(tracks)
                 if not tracks:
                     stats['ekf_seconds'] += time.perf_counter() - before
                     continue
-                indices, _, nn_xy = selected_predictions(outputs, b, cfg)
                 boxes = outputs[0]['prediction'][-1][b]
-                labels = outputs[0]['classification'][-1][b].detach().argmax(-1)[indices]
                 world = to_world(boxes[indices, :2].detach(), data['img_metas'][b]['T_global'])
                 pairs = associate(world.cpu().double().numpy(), labels.cpu().numpy(), tracks,
                                   cfg.get('ekf_association_gate', 9.21),
                                   cfg.get('ekf_max_association_distance', 6.))
+                stats['association_attempted_count'] += vehicle_count
+                stats['association_rejection_count'] += vehicle_count-len(pairs)
                 world_prediction = to_world(nn_xy, data['img_metas'][b]['T_global'])
+                sample_matches = 0
                 for i, j in pairs:
-                    prior = bank.predict_prior(tracks[j], context['next_timestamp'])
+                    prior = bank.predict_prior(tracks[j], context['next_timestamp'], return_covariance=True)
                     if prior is not None:
+                        position, prior_covariance = prior
                         predictions.append(world_prediction[i])
-                        priors.append(prior)
+                        priors.append(position)
+                        sample_matches += 1
+                        stats['prior_variance_sum'] += float(np.trace(prior_covariance)/2)
+                        stats['track_observation_sum'] += len(tracks[j]['observations'])
+                        stats['track_age_sum'] += bank.time-tracks[j]['last_seen']
+                stats['active_samples'] += int(sample_matches > 0)
+                stats['prior_rejection_count'] += len(pairs)-sample_matches
+                stats['unavailable_dyn_target_count'] -= sample_matches
                 stats['ekf_seconds'] += time.perf_counter() - before
     finally:
         random.setstate(py_state)
         np.random.set_state(np_state)
-    stats['valid_agents'] = len(predictions)
+    stats['valid_agents'] = stats['matched_dyn_count'] = len(predictions)
+    if predictions:
+        predicted = torch.stack(predictions)
+        target = torch.as_tensor(np.stack(priors), device=device, dtype=torch.float32)
+        loss = compute_dynamics_loss(predicted, target, torch.ones(len(priors), device=device, dtype=torch.bool))
+    else:
+        loss = zero
+    stats['raw_loss_dyn'] = float(loss.detach())
+    stats['weighted_loss_dyn'] = stats['raw_loss_dyn'] * cfg.get('lambda_dyn', .1)
     stats['total_seconds'] = time.perf_counter() - started
-    model.dynamics_diagnostics = stats  # logging only; no tracks survive this call
-    if not predictions:
-        return zero
-    predicted = torch.stack(predictions)
-    target = torch.as_tensor(np.stack(priors), device=device, dtype=torch.float32)
-    return compute_dynamics_loss(predicted, target, torch.ones(len(priors), device=device, dtype=torch.bool))
+    model.dynamics_diagnostics = stats  # detached logging only; no tracks survive
+    return loss

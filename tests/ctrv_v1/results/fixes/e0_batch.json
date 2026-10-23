@@ -1,0 +1,67 @@
+{
+  "mode": "disabled",
+  "fp16": false,
+  "matched_agent_count": 2,
+  "forward_seconds": 13.873009961098433,
+  "peak_memory_mib": 4601.607421875,
+  "losses": {
+    "map_loss_cls_0": 0.5922566056251526,
+    "map_loss_line_0": 1.0613514184951782,
+    "map_loss_cls_1": 0.7100096940994263,
+    "map_loss_line_1": 0.6892388463020325,
+    "map_loss_cls_2": 0.8224437236785889,
+    "map_loss_line_2": 0.5123030543327332,
+    "map_loss_cls_3": 0.7584325671195984,
+    "map_loss_line_3": 0.796211302280426,
+    "map_loss_cls_4": 0.6596008539199829,
+    "map_loss_line_4": 0.7511777877807617,
+    "map_loss_cls_5": 0.691710352897644,
+    "map_loss_line_5": 0.7520517110824585,
+    "planning_loss_cls_0": 0.02135210856795311,
+    "planning_loss_reg_0": 0.13806119561195374,
+    "planning_loss_status_0": 0.125880166888237,
+    "loss_evo": 0.20101487636566162
+  },
+  "raw_evo": 0.20101487636566162,
+  "dynamics": null,
+  "gradients": {
+    "evo": {
+      "backbone": 25.91143942249589,
+      "neck": 4.350067155250767,
+      "detection": 20.0031420964045,
+      "motion": 1.1421967815165548,
+      "prediction": 1.1273302855172391,
+      "motion_regression_parameters": {
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.weight": 0.22980144619941711,
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.bias": 0.010997590608894825,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.weight": 0.7096413373947144,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.bias": 0.12151393294334412,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.weight": 0.6677386164665222,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.bias": 0.49999943375587463
+      }
+    }
+  },
+  "online_steps": [
+    {
+      "index": 10,
+      "seconds": 0.4993441067636013,
+      "loss": 9.283095359802246,
+      "grad_norm": 124.08689880371094,
+      "dynamics": null
+    },
+    {
+      "index": 11,
+      "seconds": 2.326757911592722,
+      "loss": 7.387975215911865,
+      "grad_norm": 98.88970184326172,
+      "dynamics": null
+    },
+    {
+      "index": 12,
+      "seconds": 2.5799287520349026,
+      "loss": 7.332879066467285,
+      "grad_norm": 144.29029846191406,
+      "dynamics": null
+    }
+  ]
+}

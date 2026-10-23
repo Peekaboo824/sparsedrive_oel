@@ -1,0 +1,47 @@
+/vepfs-mlp2/c20250505/240906016/jjy/Anaconda/envs/sparsedrive/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+test_configs_only_differ_by_dynamics (test_ctrv_v1.DataTests) ... ok
+test_dataset_container_boundary_and_rng (test_ctrv_v1.DataTests) ... ok
+test_scene_window_interleaved (test_ctrv_v1.DataTests) ... ok
+test_decode_exact_legacy (test_ctrv_v1.LossTests) ... ok
+test_disabled_forward_and_optimizer_equivalence (test_ctrv_v1.LossTests) ... ok
+test_dynamics_precedes_future_backbone_buffer_updates (test_ctrv_v1.LossTests) ... ok
+test_evo_ast_unchanged (test_ctrv_v1.LossTests) ... ok
+test_historical_teacher_copies_online_weights_without_live_mutation (test_ctrv_v1.LossTests) ... ok
+test_l1_stop_gradient_and_empty (test_ctrv_v1.LossTests) ... ok
+test_original_evo_values_and_gradients (test_ctrv_v1.LossTests) ... ok
+test_synthetic_full_dynamics_causality_gradients (test_ctrv_v1.LossTests) ... ok
+test_world_coordinate_transform_and_gradient (test_ctrv_v1.LossTests) ... ok
+test_association_class_gate_one_to_one (test_ctrv_v1.MathTests) ... ok
+test_causality_scene_shuffle (test_ctrv_v1.MathTests) ... ok
+test_invalid_input (test_ctrv_v1.MathTests) ... ok
+test_jacobian_finite_difference_including_zero (test_ctrv_v1.MathTests) ... ok
+test_position_only_bootstrap_on_straight_and_turn (test_ctrv_v1.MathTests) ... ok
+test_prior_preserved_and_joseph_covariance (test_ctrv_v1.MathTests) ... ok
+test_straight_and_intervals (test_ctrv_v1.MathTests) ... ok
+test_turn (test_ctrv_v1.MathTests) ... ok
+test_warmup_low_speed_missing_expiry (test_ctrv_v1.MathTests) ... ok
+test_current_coordinate_transform_and_missing_reappearing_track (test_v1_fixes.AssociationFixTests) ... ok
+test_current_position_mapping_independent_of_nn_future (test_v1_fixes.AssociationFixTests) ... ok
+test_short_occlusion_reuses_track_but_current_missing_is_inactive (test_v1_fixes.AssociationFixTests) ... ok
+test_two_close_same_class_one_to_one_and_class_gate (test_v1_fixes.AssociationFixTests) ... ok
+test_noisy_observations_and_larger_measurement_noise (test_v1_fixes.BootstrapFixTests) ... ok
+test_stationary_and_low_speed_remain_direction_uncertain (test_v1_fixes.BootstrapFixTests) ... ok
+test_straight_and_turning_mean_and_covariance (test_v1_fixes.BootstrapFixTests) ... ok
+test_two_observations_yaw_unknown_and_configurable_floors (test_v1_fixes.BootstrapFixTests) ... ok
+test_filter_preserves_unrelated_parent_hooks (test_v1_fixes.DiagnosticsFixTests) ... ok
+test_gradient_conflict_preserves_gradients_and_normal_step (test_v1_fixes.DiagnosticsFixTests) ... ok
+test_hook_detached_rng_loss_and_grad_unchanged (test_v1_fixes.DiagnosticsFixTests) ... ok
+test_only_early_stopping_removed_shared_budget (test_v1_fixes.DiagnosticsFixTests) ... ok
+test_sampler_sequence_same_seed_and_rank (test_v1_fixes.DiagnosticsFixTests) ... ok
+test_unequal_rank_batch_agent_denominators (test_v1_fixes.DiagnosticsFixTests) ... ok
+test_all_low_no_teacher_or_bank_and_graph_zero (test_v1_fixes.EntropyFixTests) ... ok
+test_command_missing_and_exact_boundary_match_original (test_v1_fixes.EntropyFixTests) ... ok
+test_fp16_gate_boundary_and_command_parity (test_v1_fixes.EntropyFixTests) ... ok
+test_mixed_batch_matches_evo_and_zero_low_entropy_gradient (test_v1_fixes.EntropyFixTests) ... ok
+
+----------------------------------------------------------------------
+Ran 39 tests in 8.257s
+
+OK
+Use flash_attn_varlen_kvpacked_func

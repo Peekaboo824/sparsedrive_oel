@@ -33,6 +33,7 @@ def main():
     p.add_argument('--output-dir', required=True)
     p.add_argument('--index', type=int, default=10)
     p.add_argument('--fp16', action='store_true')
+    p.add_argument('--gradient-conflict', action='store_true', help='Optional local raw/weighted gradient cosine analysis; no optimizer step')
     p.add_argument('--steps', type=int, default=0, help='Additional real optimizer steps on sequential samples')
     args = p.parse_args()
     output = Path(args.output_dir)
@@ -80,6 +81,11 @@ def main():
                    losses={k: float(v.detach()) for k, v in losses.items()},
                    raw_evo=float(recorded['evo'].detach()),
                    dynamics=getattr(model, 'dynamics_diagnostics', None), gradients={})
+    if args.gradient_conflict:
+        from projects.mmdet3d_plugin.models.dynamics.gradient_diagnostics import gradient_conflict
+        raw_dyn = losses['loss_dyn']/cfg.model.evo_cfg.lambda_dyn if 'loss_dyn' in losses else None
+        summary['gradient_conflict'] = gradient_conflict(model, recorded['evo'], raw_dyn,
+            cfg.model.evo_cfg.get('loss_weight', 1.), cfg.model.evo_cfg.get('lambda_dyn', .1))
     gradients = {}
     for name, loss in [('evo', recorded['evo'])] + ([('dyn', losses['loss_dyn']/cfg.model.evo_cfg.lambda_dyn)] if 'loss_dyn' in losses else []):
         model.zero_grad(set_to_none=True)

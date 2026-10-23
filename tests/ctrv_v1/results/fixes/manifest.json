@@ -1,0 +1,33 @@
+{
+  "fix_base_commit": "464d7ec38b98b3bd8aedd5d130cc22682ff4dadf",
+  "original_baseline_commit": "013b5c34abc3dea3215224a4c765f811d657c3f4",
+  "protected_files_sha256": {
+    "projects/mmdet3d_plugin/models/sparsedrive.py": "17b12b7b0b06799d76f0d44dca8eb52863018717e51a2e7b4aa0ad289a2408ae",
+    "projects/mmdet3d_plugin/models/sparsedrive_head.py": "97292b791ea913df96f138e8eca2c90910a03c053c1f5b538741739060847459",
+    "projects/mmdet3d_plugin/models/motion/motion_planning_head.py": "13bf519880ee3f979f7a9b882dd23a39dd761281093bd47ee755269585d0fb73",
+    "projects/mmdet3d_plugin/models/dynamics/ctrv_ekf.py": "8a3585672c5aec26b0f2a27664323974fb879c63f4ea8d0cc7889c36e8b273b4",
+    "projects/configs/sparsedrive_small_stage2.py": "54b3845170d9a228b248b3d060f1ec5fac6b0d5efabad33e4cd2a0be6548553b"
+  },
+  "unchanged_current_association": true,
+  "tests": {
+    "unit_tests": 39,
+    "fixed_output_exact": true,
+    "real_e0_optimizer_steps": 3,
+    "real_e1_optimizer_steps": 3,
+    "ddp_fp16": true,
+    "training_entry_e0_iterations": 4,
+    "training_entry_e1_iterations": 4,
+    "zero_agent_unequal_batch_ddp_reduction": true
+  },
+  "artifact_directory": "/vepfs-mlp2/c20250505/240906016/jjy/tmp_ctrv_v1_fix_artifacts",
+  "prior_golden": "/tmp/ctrv_v1_fixed_outputs/golden.pt",
+  "limitations": [
+    "Original independent CUDA replay non-determinism remains; tolerances unchanged",
+    "Legacy target-domain Map/Planning/DN supervision unchanged",
+    "No full 20-epoch training or model-performance conclusion"
+  ],
+  "infrastructure_retries": [
+    "Root /tmp full during E1 golden save; this round artifacts moved with symlink",
+    "Dynamic rendezvous startup failed for E0; fixed-port rerun completed"
+  ]
+}

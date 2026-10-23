@@ -9,7 +9,8 @@ from capture_baseline import seed, make_batch, norms
 import torch
 import torch.distributed as dist
 import mmcv
-from mmcv.runner import load_checkpoint, wrap_fp16_model
+from mmcv.runner import load_checkpoint, wrap_fp16_model, HOOKS
+from mmcv.utils import build_from_cfg, import_modules_from_strings
 from mmdet.models import build_detector
 from mmcv.parallel import MMDistributedDataParallel
 
@@ -24,6 +25,8 @@ def main():
     torch.cuda.set_device(rank)
     dist.init_process_group('nccl')
     cfg = mmcv.Config.fromfile(args.config)
+    if cfg.get('custom_imports'):
+        import_modules_from_strings(**cfg.custom_imports)
     seed()
     model = build_detector(cfg.model).cuda().train()
     load_checkpoint(model, cfg.load_from, map_location='cpu', strict=False)
@@ -46,8 +49,16 @@ def main():
         from mmcv.runner import OptimizerHook
         hook = OptimizerHook(grad_clip=dict(max_norm=25, norm_type=2))
     runner.register_hook(hook)
+    diagnostics_hook = None
+    for hook_cfg in cfg.get('custom_hooks', []):
+        settings = dict(hook_cfg)
+        priority = settings.pop('priority', 'NORMAL')
+        custom = build_from_cfg(settings, HOOKS)
+        runner.register_hook(custom, priority=priority)
+        if settings['type'] == 'DynamicsDiagnosticsHook':
+            diagnostics_hook = custom
     runner.run([[batch]], [('train', 1)])
-    summary = dict(rank=rank, fp16=args.fp16, log_vars=runner.outputs['log_vars'],
+    summary = dict(rank=rank, fp16=args.fp16, reduced_dynamics=getattr(diagnostics_hook, 'latest_metrics', None), log_vars=runner.outputs['log_vars'],
                    dynamics=model.module.dynamics_diagnostics, gradients=norms(model.module))
     (output / ('rank%d.json' % rank)).write_text(json.dumps(summary, indent=2))
     print(json.dumps(summary), flush=True)

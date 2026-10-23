@@ -1,0 +1,26 @@
+{
+  "disabled_evo_weight_0.0": {
+    "bitwise_equal": true,
+    "raw_evo": 0.20101046562194824,
+    "matched_agents": 2,
+    "compared": "loss_dict, raw_evo, topk, modes, matched_positions, pseudo_targets, output_gradients, AdamW parameters/state"
+  },
+  "zero_evo_weight_0.0": {
+    "bitwise_equal": true,
+    "raw_evo": 0.20101046562194824,
+    "matched_agents": 2,
+    "compared": "loss_dict, raw_evo, topk, modes, matched_positions, pseudo_targets, output_gradients, AdamW parameters/state"
+  },
+  "disabled_evo_weight_1.0": {
+    "bitwise_equal": true,
+    "raw_evo": 0.20101046562194824,
+    "matched_agents": 2,
+    "compared": "loss_dict, raw_evo, topk, modes, matched_positions, pseudo_targets, output_gradients, AdamW parameters/state"
+  },
+  "zero_evo_weight_1.0": {
+    "bitwise_equal": true,
+    "raw_evo": 0.20101046562194824,
+    "matched_agents": 2,
+    "compared": "loss_dict, raw_evo, topk, modes, matched_positions, pseudo_targets, output_gradients, AdamW parameters/state"
+  }
+}

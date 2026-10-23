@@ -1,0 +1,41 @@
+{
+  "rank": 0,
+  "fp16": true,
+  "log_vars": {
+    "map_loss_cls_0": 0.49864470958709717,
+    "map_loss_line_0": 0.8946906328201294,
+    "map_loss_cls_1": 0.47684887051582336,
+    "map_loss_line_1": 0.9299393892288208,
+    "map_loss_cls_2": 0.5295358896255493,
+    "map_loss_line_2": 0.937239408493042,
+    "map_loss_cls_3": 0.3918740451335907,
+    "map_loss_line_3": 0.9893609881401062,
+    "map_loss_cls_4": 0.3580785095691681,
+    "map_loss_line_4": 1.0381762981414795,
+    "map_loss_cls_5": 0.3708779811859131,
+    "map_loss_line_5": 1.0292577743530273,
+    "planning_loss_cls_0": 0.023563651368021965,
+    "planning_loss_reg_0": 0.08079418540000916,
+    "planning_loss_status_0": 0.19786113500595093,
+    "loss_evo": 0.5045808553695679,
+    "loss_dyn": 0.025443268939852715,
+    "loss": 9.27676773071289
+  },
+  "dynamics": {
+    "valid_agents": 1,
+    "history_frames": 5,
+    "matched_observations": 20,
+    "observations": 29,
+    "teacher_copy_seconds": 0.08794001489877701,
+    "history_perception_seconds": 0.9440234117209911,
+    "ekf_seconds": 0.011855725198984146,
+    "total_seconds": 1.0441440604627132
+  },
+  "gradients": {
+    "backbone": 22.88212971012149,
+    "neck": 4.043821962570378,
+    "detection": 4.522990454054298,
+    "motion": 2.577255047399807,
+    "prediction": 2.4937772799131395
+  }
+}

@@ -100,6 +100,8 @@ class NuScenes3DDataset(Dataset):
             keep_consistent_seq_aug=True,
             work_dir=None,
             eval_config=None,
+            dynamics_history_length=0,
+            dynamics_history_pipeline=None,
     ):
         self.version = version
         self.load_interval = load_interval
@@ -146,6 +148,13 @@ class NuScenes3DDataset(Dataset):
 
         self.work_dir = work_dir
         self.eval_config = eval_config
+        self.dynamics_history_length = dynamics_history_length
+        if dynamics_history_length:
+            if dynamics_history_length < 3 or dynamics_history_pipeline is None:
+                raise ValueError('Dynamics requires >=3 frames and a sensor-only pipeline')
+            from .dynamics_history import scene_indices
+            self.dynamics_scenes = scene_indices(self.data_infos)
+            self.dynamics_pipeline = Compose(dynamics_history_pipeline)
 
     def __len__(self):
         return len(self.data_infos)
@@ -355,6 +364,38 @@ class NuScenes3DDataset(Dataset):
                         else:
                             # 矩阵类数据 stack=True, 但必须 pad_dims=None
                             data[key] = DC(val_tensor, stack=True, pad_dims=None)
+
+        if self.dynamics_history_length:
+            # Extra augmentation/pipeline work must not perturb the old RNG stream.
+            py_rng, np_rng, torch_rng = random.getstate(), np.random.get_state(), torch.get_rng_state()
+            try:
+                from .dynamics_history import history_indices, sensor_frame_info
+                indices = history_indices(self.data_infos, self.dynamics_scenes, idx,
+                                          self.dynamics_history_length)
+                history = []
+                for h in indices:
+                    raw = sensor_frame_info(self.data_infos[h])
+                    raw['aug_config'] = copy.deepcopy(aug_config)
+                    frame = self.dynamics_pipeline(raw)
+                    frame = {k: (v.data if isinstance(v, DC) else v) for k, v in frame.items()}
+                    # Collect may leave numpy sensor matrices unwrapped.
+                    for key in ('projection_mat', 'image_wh'):
+                        frame[key] = torch.as_tensor(frame[key])
+                    # Unix timestamps need FP64 to preserve subsecond intervals.
+                    frame['timestamp'] = torch.as_tensor(frame['timestamp'], dtype=torch.float64)
+                    frame['scene_token'] = info['scene_token']
+                    history.append(frame)
+                valid_next = has_next_frame and self.data_infos[idx+1]['timestamp'] > info['timestamp']
+                context = dict(history=history, scene_token=info['scene_token'],
+                               current_timestamp=info['timestamp']/1e6,
+                               next_timestamp=self.data_infos[idx+1]['timestamp']/1e6 if valid_next else None,
+                               has_valid_next_frame=valid_next)
+                data['has_valid_next_frame'] = DC(valid_next, cpu_only=True)
+                data['dynamics_context'] = DC(context, cpu_only=True)
+            finally:
+                random.setstate(py_rng)
+                np.random.set_state(np_rng)
+                torch.set_rng_state(torch_rng)
 
         return data
 

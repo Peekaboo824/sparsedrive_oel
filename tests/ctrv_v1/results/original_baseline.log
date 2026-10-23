@@ -1,0 +1,9 @@
+/vepfs-mlp2/c20250505/240906016/jjy/Anaconda/envs/sparsedrive/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+/vepfs-mlp2/c20250505/240906016/jjy/Anaconda/envs/sparsedrive/lib/python3.8/site-packages/mmdet/models/backbones/resnet.py:401: UserWarning: DeprecationWarning: pretrained is deprecated, please use "init_cfg" instead
+  warnings.warn('DeprecationWarning: pretrained is deprecated, '
+Use flash_attn_varlen_kvpacked_func
+load checkpoint from local path: ckpt/nuscenes_boston_sg_split_v2/sparsedrive_stage2.pth
+{'version': 'v1.0-trainval'}
+{'map_loss_cls_0': 0.592256486415863, 'map_loss_line_0': 1.0613514184951782, 'map_loss_cls_1': 0.7100019454956055, 'map_loss_line_1': 0.6892415881156921, 'map_loss_cls_2': 0.822405219078064, 'map_loss_line_2': 0.5123005509376526, 'map_loss_cls_3': 0.7583980560302734, 'map_loss_line_3': 0.7962135076522827, 'map_loss_cls_4': 0.6595859527587891, 'map_loss_line_4': 0.7511796951293945, 'map_loss_cls_5': 0.6915955543518066, 'map_loss_line_5': 0.7520537376403809, 'planning_loss_cls_0': 0.021352309733629227, 'planning_loss_reg_0': 0.13805441558361053, 'planning_loss_status_0': 0.12580977380275726, 'loss_evo': 0.0}
+raw_evo 0.20106828212738037 grad_norms {'backbone': 25.901876044174866, 'neck': 4.352645760289946, 'detection': 20.037897133344348, 'motion': 1.1421868055158784, 'prediction': 1.1273208540563626} saved /tmp/ctrv_v1_original_golden.pt

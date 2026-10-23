@@ -1,0 +1,3 @@
+/vepfs-mlp2/c20250505/240906016/jjy/Anaconda/envs/sparsedrive/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+Wrote NEW runtime annotations: /tmp/ctrv_v1_runtime_train.pkl resolved 15058 paths; labels unchanged

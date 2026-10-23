@@ -1,0 +1,131 @@
+{
+  "control": {
+    "losses": {
+      "max_abs": 0.00017565488815307617,
+      "relative_l2": 7.664236613928206e-05,
+      "elements": 16,
+      "bitwise_equal": false
+    },
+    "det": {
+      "max_abs": 0.01025843620300293,
+      "relative_l2": 2.5433163551023123e-05,
+      "elements": 59400,
+      "bitwise_equal": false
+    },
+    "motion": {
+      "max_abs": 2.3007288249209523,
+      "relative_l2": 0.010649520837349645,
+      "elements": 145800,
+      "bitwise_equal": false
+    },
+    "diagnostics": {
+      "max_abs": 333.0,
+      "relative_l2": 0.1348385164771476,
+      "elements": 46001,
+      "bitwise_equal": false
+    },
+    "grads": {
+      "max_abs": 0.04127073287963867,
+      "relative_l2": 0.017119501700756382,
+      "elements": 82832676,
+      "bitwise_equal": false
+    },
+    "matched": {
+      "max_abs": 0.00021457672119140625,
+      "relative_l2": 6.457730635902331e-06,
+      "elements": 8,
+      "bitwise_equal": false
+    },
+    "matched_agent_count_equal": true,
+    "raw_evo_abs": 3.123283386230469e-05,
+    "topk_equal": false,
+    "mode_equal": false,
+    "within_tolerance": false
+  },
+  "disabled": {
+    "losses": {
+      "max_abs": 0.0001423358917236328,
+      "relative_l2": 6.070588671006254e-05,
+      "elements": 16,
+      "bitwise_equal": false
+    },
+    "det": {
+      "max_abs": 0.009455680847167969,
+      "relative_l2": 2.192696472001898e-05,
+      "elements": 59400,
+      "bitwise_equal": false
+    },
+    "motion": {
+      "max_abs": 0.20103250443935394,
+      "relative_l2": 0.0016189599925024152,
+      "elements": 145800,
+      "bitwise_equal": false
+    },
+    "diagnostics": {
+      "max_abs": 0.0005034208297729492,
+      "relative_l2": 9.107489816054037e-07,
+      "elements": 46001,
+      "bitwise_equal": false
+    },
+    "grads": {
+      "max_abs": 0.02814328670501709,
+      "relative_l2": 0.018673811666625115,
+      "elements": 82832676,
+      "bitwise_equal": false
+    },
+    "matched": {
+      "max_abs": 0.000286102294921875,
+      "relative_l2": 6.4698044791448e-06,
+      "elements": 8,
+      "bitwise_equal": false
+    },
+    "matched_agent_count_equal": true,
+    "raw_evo_abs": 3.62396240234375e-05,
+    "topk_equal": true,
+    "mode_equal": true,
+    "within_tolerance": false
+  },
+  "zero": {
+    "losses": {
+      "max_abs": 0.00020438432693481445,
+      "relative_l2": 9.136790730269537e-05,
+      "elements": 16,
+      "bitwise_equal": false
+    },
+    "det": {
+      "max_abs": 0.013579845428466797,
+      "relative_l2": 2.6973755837649018e-05,
+      "elements": 59400,
+      "bitwise_equal": false
+    },
+    "motion": {
+      "max_abs": 1.6406300067901611,
+      "relative_l2": 0.003735853769252873,
+      "elements": 145800,
+      "bitwise_equal": false
+    },
+    "diagnostics": {
+      "max_abs": 333.0,
+      "relative_l2": 0.13483851646285558,
+      "elements": 46001,
+      "bitwise_equal": false
+    },
+    "grads": {
+      "max_abs": 0.02945086359977722,
+      "relative_l2": 0.015037379037007019,
+      "elements": 82832676,
+      "bitwise_equal": false
+    },
+    "matched": {
+      "max_abs": 0.000209808349609375,
+      "relative_l2": 7.0149940975034305e-06,
+      "elements": 8,
+      "bitwise_equal": false
+    },
+    "matched_agent_count_equal": true,
+    "raw_evo_abs": 2.4437904357910156e-05,
+    "topk_equal": false,
+    "mode_equal": false,
+    "within_tolerance": false
+  }
+}

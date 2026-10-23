@@ -1,0 +1,12 @@
+{
+  "e0": {
+    "iterations": 4,
+    "last_iteration": "2026-10-23 11:35:02,157 - mmdet - INFO - Iter [4/4]\tlr: 2.795e-07, eta: 0:00:00, time: 2.277, data_time: 0.037, memory: 5129, map_loss_cls_0: 0.4972, map_loss_line_0: 0.7928, map_loss_cls_1: 0.6158, map_loss_line_1: 0.6093, map_loss_cls_2: 0.7001, map_loss_line_2: 0.3177, map_loss_cls_3: 0.5816, map_loss_line_3: 0.4524, map_loss_cls_4: 0.6547, map_loss_line_4: 0.4522, map_loss_cls_5: 0.6515, map_loss_line_5: 0.4523, planning_loss_cls_0: 0.0212, planning_loss_reg_0: 0.1133, planning_loss_status_0: 0.1079, loss_evo: 0.2385, loss: 7.2586, grad_norm: 103.2631",
+    "loss_dyn_present": false
+  },
+  "e1": {
+    "iterations": 4,
+    "last_iteration": "2026-10-23 11:33:38,665 - mmdet - INFO - Iter [4/4]\tlr: 2.795e-07, eta: 0:00:00, time: 3.477, data_time: 0.026, memory: 5180, map_loss_cls_0: 0.4995, map_loss_line_0: 0.7928, map_loss_cls_1: 0.6007, map_loss_line_1: 0.7961, map_loss_cls_2: 0.6897, map_loss_line_2: 0.4200, map_loss_cls_3: 0.6146, map_loss_line_3: 0.4605, map_loss_cls_4: 0.6904, map_loss_line_4: 0.4604, map_loss_cls_5: 0.7307, map_loss_line_5: 0.4604, planning_loss_cls_0: 0.0221, planning_loss_reg_0: 0.0856, planning_loss_status_0: 0.1101, loss_evo: 0.2916, loss_dyn: 0.0368, loss: 7.7619, grad_norm: 75.3751",
+    "loss_dyn_present": true
+  }
+}

@@ -1,0 +1,29 @@
+/vepfs-mlp2/c20250505/240906016/jjy/Anaconda/envs/sparsedrive/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+test_configs_only_differ_by_dynamics (test_ctrv_v1.DataTests) ... ok
+test_dataset_container_boundary_and_rng (test_ctrv_v1.DataTests) ... ok
+test_scene_window_interleaved (test_ctrv_v1.DataTests) ... ok
+test_decode_exact_legacy (test_ctrv_v1.LossTests) ... ok
+test_disabled_forward_and_optimizer_equivalence (test_ctrv_v1.LossTests) ... ok
+test_dynamics_precedes_future_backbone_buffer_updates (test_ctrv_v1.LossTests) ... ok
+test_evo_ast_unchanged (test_ctrv_v1.LossTests) ... ok
+test_historical_teacher_copies_online_weights_without_live_mutation (test_ctrv_v1.LossTests) ... ok
+test_l1_stop_gradient_and_empty (test_ctrv_v1.LossTests) ... ok
+test_original_evo_values_and_gradients (test_ctrv_v1.LossTests) ... ok
+test_synthetic_full_dynamics_causality_gradients (test_ctrv_v1.LossTests) ... ok
+test_world_coordinate_transform_and_gradient (test_ctrv_v1.LossTests) ... ok
+test_association_class_gate_one_to_one (test_ctrv_v1.MathTests) ... ok
+test_causality_scene_shuffle (test_ctrv_v1.MathTests) ... ok
+test_invalid_input (test_ctrv_v1.MathTests) ... ok
+test_jacobian_finite_difference_including_zero (test_ctrv_v1.MathTests) ... ok
+test_position_only_bootstrap_on_straight_and_turn (test_ctrv_v1.MathTests) ... ok
+test_prior_preserved_and_joseph_covariance (test_ctrv_v1.MathTests) ... ok
+test_straight_and_intervals (test_ctrv_v1.MathTests) ... ok
+test_turn (test_ctrv_v1.MathTests) ... ok
+test_warmup_low_speed_missing_expiry (test_ctrv_v1.MathTests) ... ok
+
+----------------------------------------------------------------------
+Ran 21 tests in 0.314s
+
+OK
+Use flash_attn_varlen_kvpacked_func

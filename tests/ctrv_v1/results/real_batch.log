@@ -1,0 +1,126 @@
+Use flash_attn_varlen_kvpacked_func
+load checkpoint from local path: ckpt/nuscenes_boston_sg_split_v2/sparsedrive_stage2.pth
+{'version': 'v1.0-trainval'}
+{
+  "mode": "enabled",
+  "fp16": false,
+  "matched_agent_count": 2,
+  "forward_seconds": 12.44684438034892,
+  "peak_memory_mib": 4602.6943359375,
+  "losses": {
+    "map_loss_cls_0": 0.5922565460205078,
+    "map_loss_line_0": 1.0613514184951782,
+    "map_loss_cls_1": 0.7100056409835815,
+    "map_loss_line_1": 0.6892343759536743,
+    "map_loss_cls_2": 0.8224362730979919,
+    "map_loss_line_2": 0.5122921466827393,
+    "map_loss_cls_3": 0.7584303021430969,
+    "map_loss_line_3": 0.7961996793746948,
+    "map_loss_cls_4": 0.6595845222473145,
+    "map_loss_line_4": 0.7511653900146484,
+    "map_loss_cls_5": 0.6916364431381226,
+    "map_loss_line_5": 0.7520391941070557,
+    "planning_loss_cls_0": 0.02135220170021057,
+    "planning_loss_reg_0": 0.13805809617042542,
+    "planning_loss_status_0": 0.12589330971240997,
+    "loss_evo": 0.20099616050720215,
+    "loss_dyn": 0.04580841213464737
+  },
+  "raw_evo": 0.20099616050720215,
+  "dynamics": {
+    "valid_agents": 2,
+    "history_frames": 5,
+    "matched_observations": 20,
+    "observations": 29,
+    "teacher_copy_seconds": 0.08269159123301506,
+    "history_perception_seconds": 1.1380047872662544,
+    "ekf_seconds": 0.014033988118171692,
+    "total_seconds": 1.235093791037798
+  },
+  "gradients": {
+    "evo": {
+      "backbone": 25.904316266586225,
+      "neck": 4.355371459883466,
+      "detection": 20.047679341452003,
+      "motion": 1.1422418076692562,
+      "prediction": 1.1273761088908283,
+      "motion_regression_parameters": {
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.weight": 0.22980622947216034,
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.bias": 0.010997590608894825,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.weight": 0.7096967697143555,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.bias": 0.12151393294334412,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.weight": 0.6677553653717041,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.bias": 0.49999943375587463
+      }
+    },
+    "dyn": {
+      "backbone": 26.491343308057363,
+      "neck": 3.418405314042911,
+      "detection": 17.602497861441265,
+      "motion": 1.145432408646651,
+      "prediction": 1.13025157525534,
+      "motion_regression_parameters": {
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.weight": 0.21817101538181305,
+        "head.motion_plan_head.layers.21.motion_reg_branch.0.bias": 0.010110976174473763,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.weight": 0.7176870107650757,
+        "head.motion_plan_head.layers.21.motion_reg_branch.2.bias": 0.12254074960947037,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.weight": 0.6675758957862854,
+        "head.motion_plan_head.layers.21.motion_reg_branch.4.bias": 0.49981260299682617
+      }
+    }
+  },
+  "online_steps": [
+    {
+      "index": 10,
+      "seconds": 0.4443598687648773,
+      "loss": 9.328740119934082,
+      "grad_norm": 123.83990478515625,
+      "dynamics": {
+        "valid_agents": 2,
+        "history_frames": 5,
+        "matched_observations": 20,
+        "observations": 29,
+        "teacher_copy_seconds": 0.08269159123301506,
+        "history_perception_seconds": 1.1380047872662544,
+        "ekf_seconds": 0.014033988118171692,
+        "total_seconds": 1.235093791037798
+      }
+    },
+    {
+      "index": 11,
+      "seconds": 3.2352161146700382,
+      "loss": 7.385768890380859,
+      "grad_norm": 100.9590835571289,
+      "dynamics": {
+        "valid_agents": 0,
+        "history_frames": 5,
+        "matched_observations": 18,
+        "observations": 24,
+        "teacher_copy_seconds": 0.08786648139357567,
+        "history_perception_seconds": 1.0962223708629608,
+        "ekf_seconds": 0.010275956243276596,
+        "total_seconds": 1.194790806621313
+      }
+    },
+    {
+      "index": 12,
+      "seconds": 3.282547503709793,
+      "loss": 7.625370025634766,
+      "grad_norm": 122.12557220458984,
+      "dynamics": {
+        "valid_agents": 1,
+        "history_frames": 5,
+        "matched_observations": 13,
+        "observations": 19,
+        "teacher_copy_seconds": 0.05802399665117264,
+        "history_perception_seconds": 1.0935146175324917,
+        "ekf_seconds": 0.0144851915538311,
+        "total_seconds": 1.1664542891085148
+      }
+    }
+  ]
+}
+/vepfs-mlp2/c20250505/240906016/jjy/Anaconda/envs/sparsedrive/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+/vepfs-mlp2/c20250505/240906016/jjy/Anaconda/envs/sparsedrive/lib/python3.8/site-packages/mmdet/models/backbones/resnet.py:401: UserWarning: DeprecationWarning: pretrained is deprecated, please use "init_cfg" instead
+  warnings.warn('DeprecationWarning: pretrained is deprecated, '

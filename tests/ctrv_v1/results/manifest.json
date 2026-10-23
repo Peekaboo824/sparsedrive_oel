@@ -1,0 +1,45 @@
+{
+  "baseline_commit": "013b5c34abc3dea3215224a4c765f811d657c3f4",
+  "branch": "feat/ctrv-ekf-v1",
+  "environment": {
+    "python": "3.8",
+    "torch": "1.13.0+cu116",
+    "mmcv": "1.7.1",
+    "mmdet": "2.28.2",
+    "gpus": "2 x A100 80GB"
+  },
+  "tests": {
+    "unit": 21,
+    "fixed_real_output_exact": true,
+    "independent_cuda_strict_regression": false,
+    "real_online_optimizer_steps": 3,
+    "ddp_fp16_mmcv_runner_ranks": 2,
+    "ddp_iterations": 1,
+    "data_loader_workers": 2,
+    "data_loader_batch_size": 2,
+    "original_training_entry_e0_iterations": 4,
+    "original_training_entry_e1_iterations": 4,
+    "original_training_entry_ranks": 2,
+    "original_training_entry_fp16": true
+  },
+  "golden_files": [
+    "/tmp/ctrv_v1_original_golden.pt",
+    "/tmp/ctrv_v1_fixed_outputs/golden.pt",
+    "/tmp/ctrv_v1_original_final/golden.pt",
+    "/tmp/ctrv_v1_control_final/golden.pt",
+    "/tmp/ctrv_v1_disabled_final/golden.pt",
+    "/tmp/ctrv_v1_zero_final/golden.pt"
+  ],
+  "runtime_annotations": "/tmp/ctrv_v1_runtime_train.pkl",
+  "fixed_output_scope": "Exact loss algebra, selections, matches, output gradients and AdamW state; not full backbone backward",
+  "limitations": [
+    "Original CUDA replay changes near-tied queries/modes even without V1",
+    "Existing map/planning GT and detection DN remain in the training protocol",
+    "No complete E0/E1/E2 or detection/motion/planning metric evaluation"
+  ],
+  "unchanged_source_hashes": {
+    "projects/mmdet3d_plugin/models/sparsedrive_head.py": "97292b791ea913df96f138e8eca2c90910a03c053c1f5b538741739060847459",
+    "projects/mmdet3d_plugin/models/motion/motion_planning_head.py": "13bf519880ee3f979f7a9b882dd23a39dd761281093bd47ee755269585d0fb73",
+    "projects/configs/sparsedrive_small_stage2.py": "54b3845170d9a228b248b3d060f1ec5fac6b0d5efabad33e4cd2a0be6548553b"
+  }
+}

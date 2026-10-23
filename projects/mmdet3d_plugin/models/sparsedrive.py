@@ -170,6 +170,16 @@ class SparseDrive(BaseDetector):
         # -------------------------------------------------------------
         # 3. Evo Self-Supervised Loss 计算 (之前添加的代码)
         # -------------------------------------------------------------
+        # Build the prior BEFORE get_evo_loss extracts the future frame with
+        # the live training backbone (and updates its BatchNorm buffers).
+        # The isolated branch preserves live memories, BN buffers and RNG state.
+        dynamics_value = None
+        if (self.evo_cfg.get('enable_dynamics_loss', False)
+                and self.evo_cfg.get('lambda_dyn', 0.1) != 0.0):
+            from .dynamics import dynamics_loss
+            dynamics_value = self.evo_cfg.get('lambda_dyn', 0.1) * dynamics_loss(
+                self, model_outs, data)
+
         if 'next_img' in data:
             evo_loss_dict = self.get_evo_loss(model_outs, data, feature_maps)
 
@@ -178,6 +188,9 @@ class SparseDrive(BaseDetector):
                 weight = self.evo_cfg.get('loss_weight', 1.0)
                 for k, v in evo_loss_dict.items():
                     losses[k] = v * weight
+
+        if dynamics_value is not None:
+            losses['loss_dyn'] = dynamics_value
 
         return losses
 

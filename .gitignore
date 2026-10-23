@@ -1,0 +1,34 @@
+# 模型权重与大数据文件
+*.pth
+*.pkl
+*.pt
+*.ckpt
+*.bin
+*.whl
+*.tar
+*.tar.gz
+*.zip
+ckpt/
+data/infos/
+data/nuscenes
+
+# 编译产物
+__pycache__/
+*.py[cod]
+*.so
+*.o
+*.a
+build/
+*.egg-info/
+dist/
+
+# IDE / 环境
+.idea/
+.vscode/
+*.iml
+
+# 运行输出
+work_dirs/
+outputs/
+logs/
+*.log
